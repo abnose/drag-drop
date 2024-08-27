@@ -93,20 +93,86 @@ const test = ref()
 </Dialog>
 
 
-  
-  <div v-for="item in data" class="">
+  <div class="mainContainer">
 
-    <h1>{{ item.header }}</h1>
-    <VueDraggableNext  v-model="item.body" tag="ul" group="meals" :animation="100">
-     <template v-for="element in item.body"">
-        <li>{{ element.comment }}</li>
-      </template>
-    </VueDraggableNext>
+    <div v-for="item in data" class="customCard">
+      <h1 class="customCard__header">{{ item.header }}</h1>
+      <VueDraggableNext  class="customCard__body"  v-model="item.body" tag="div" group="tasks" :animation="100">
+        <span v-if="!item.body?.length">
+          بنداز اینجا
+        </span>
+        <template v-for="element in item.body"">
+          <div class="task">{{ element.comment }}</div>
+        </template>
+      </VueDraggableNext>
+      <div class="customCard__addBtn">+</div>
+    </div>
   </div>
 
 </template>
 
 <style scoped lang="scss">
+.mainContainer {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  height: 100%;
+  // background: red;
+}
+.customCard {
+  // background: red;
+  border: 1px solid snow;
+  /* From https://css.glass */
+background: rgba(255, 255, 255, 0.2);
+border-radius: 16px;
+box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+backdrop-filter: blur(5px);
+-webkit-backdrop-filter: blur(5px);
+border: 1px solid rgba(255, 255, 255, 0.3);
+width: 24.6%;
+min-height: 200px;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+margin: 1.75em .2em;
+  &__header {
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translate(-20% , -85%);
+    background: gold;
+    font-size: 1.15em;
+    border-radius: 5px;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: .25em .75em;
+  }
+   &__body {
+     background: rgba(223, 223, 223, 0.199);
+     width: 90%;
+     // background: red;
+     display: flex;
+     justify-content: center;
+     margin: 1em;
+     border-radius: 10px;
+     padding: 1em;
+    align-items: center;
+    flex-direction: column;
+  }
+  &__addBtn {
+    background: rgb(95, 95, 95);
+    width: 80%;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px ;
+    position: absolute;
+    bottom: 0;
+    transform: translate(0, 100%);
+  }
+}
 .modalBody {
   margin-top: -1em;
 }
@@ -147,12 +213,18 @@ const test = ref()
     margin-bottom: .5em;
   }
 }
-li {
+.task {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   list-style: none;
   padding: 8px;
   margin: 4px 0;
-  background-color: #6d3c3c;
+  background-color: #f4ff8f;
+  color: black;
   border-radius: 4px;
   cursor: grab;
+  width: 80%;
 }
 </style>
