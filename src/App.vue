@@ -4,8 +4,12 @@ import { ref , watch } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import dataStore from './store/crud'
 import { getRandomInt } from "./utils/util";
-const store = dataStore()
+import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
 
+const store = dataStore()
+const headerText = ref<string>('')
+const visible = ref(false);
 // Define the meals and yuckyMeals arrays
 // const data = ref(
 //   [
@@ -33,14 +37,21 @@ watch(data.value, async () => {
   store.saveData(data.value)
 })
 
+const closeAddHeaderSidebar= () => {
+  headerText.value = ''
+  visible.value = false
+
+}
+
 const addTaskGroup = () => {
   data.value.push(
     { 
-      header: getRandomInt(5000),
+      header: headerText.value,
       id: getRandomInt(5000), 
       body :[]
     }
   )
+  closeAddHeaderSidebar()
 }
 
 const test = ref()
@@ -50,12 +61,39 @@ const test = ref()
 <template>
   <!-- <Button class="customBtn">+</Button> -->
    <div class="helperBtnGroup">
-     <Button  @click="addTaskGroup" icon="pi pi-plus" aria-label="Save" />
+     <Button  @click="visible = true" icon="pi pi-plus" aria-label="Save" />
   </div>
-  <custom-date-picker
-   v-model="test"
 
- />
+<Dialog v-model:visible="visible" modal header="" :style="{ width: '25rem' }">
+    <template #header>
+        <h4>
+            {{ 'اضافه کردن گروه' }}
+        </h4>
+    </template>
+    <div class="modalBody">
+
+      <div class="customTextInput">
+          <label for="deadLine" class="font-semibold w-24">سر متن</label>
+          <InputText v-model="headerText" dir="rtl" id="headerText" class="flex-auto" autocomplete="off" />
+      </div>
+      <!-- <div class="customDatePicker">
+          <label for="email" class="font-semibold w-24">مهلت</label>
+         <custom-date-picker
+            v-model="test"
+            class="customDatePicker__input"
+          />
+      </div> -->
+    </div>
+    <template #footer>
+      <div style="margin-right: 2em; width: 100%;" class="">
+        <Button label="ذخیره" outlined severity="primary" @click="addTaskGroup" autofocus />
+        <Button label="انصراف" text severity="secondary" @click="visible = false" autofocus />
+      </div>
+    </template>
+</Dialog>
+
+
+  
   <div v-for="item in data" class="">
 
     <h1>{{ item.header }}</h1>
@@ -69,8 +107,10 @@ const test = ref()
 </template>
 
 <style scoped lang="scss">
+.modalBody {
+  margin-top: -1em;
+}
 .helperBtnGroup {
-
   position: absolute;
   top: 0;
   left: 0;
@@ -79,6 +119,33 @@ const test = ref()
   align-items: center;
   border-radius: 50%;
   transform: translate(15% ,15%);
+}
+.customTextInput {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0px;
+  label {
+    margin-left: auto;
+    margin-bottom: .5em;
+  }
+}
+.form-control {
+  font-family: 'irancell' !important;
+  padding: 1em !important;
+}
+
+.form-control::placeholder {
+  font-family: 'irancell' !important;
+  color: red
+}
+.customDatePicker {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0px;
+  label {
+    margin-left: auto;
+    margin-bottom: .5em;
+  }
 }
 li {
   list-style: none;
