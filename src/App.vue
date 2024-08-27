@@ -1,30 +1,56 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { ref , watch } from "vue";
+import { VueDraggableNext } from "vue-draggable-next";
+
+// Define the meals and yuckyMeals arrays
+const data = ref(
+  [
+    { header: 'header 1',
+      id: 1, 
+    body :[
+      {comment: 'comment 1 1', createDate: '1 1' , deadline: '1 1'},
+      {comment: 'comment 1 2', createDate: '1 2' , deadline: '1 2'},
+      {comment: 'comment 1 3', createDate: '1 3' , deadline: '1 3'},
+      {comment: 'comment 1 4', createDate: '1 4' , deadline: '1 4'},
+    ]},
+    { header: 'header 2',
+      id: 2, 
+    body :[
+      {comment: 'comment 2 1', createDate: '2 1' , deadline: '2 1'},
+      {comment: 'comment 2 2', createDate: '2 2' , deadline: '2 2'},
+      {comment: 'comment 2 3', createDate: '2 3' , deadline: '2 3'},
+      {comment: 'comment 2 4', createDate: '2 4' , deadline: '2 4'},
+    ]}
+])
+
+watch(data.value, async () => {
+  console.log(data.value)
+})
+
+
+
 </script>
 
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div v-for="item in data" class="">
+
+    <h1>{{ item.header }}</h1>
+    <VueDraggableNext  v-model="item.body" tag="ul" group="meals" :animation="100">
+     <template v-for="element in item.body"">
+        <li>{{ element.comment }}</li>
+      </template>
+    </VueDraggableNext>
   </div>
-  <HelloWorld msg="Vite + Vue" />
+
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+li {
+  list-style: none;
+  padding: 8px;
+  margin: 4px 0;
+  background-color: #6d3c3c;
+  border-radius: 4px;
+  cursor: grab;
 }
 </style>
