@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
-import { ref, watch } from "vue";
+import { ref, watch ,computed } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import dataStore from './store/crud';
-import { getRandomInt } from "./utils/util";
-import Dialog from 'primevue/dialog';
+import { getRandomInt ,calculateRemainingDays } from "./utils/util";
 import InputText from 'primevue/inputtext';
 import { useVuelidate } from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
+import Modal from './components/Modal.vue';
+import DeleteModal from './components/DeleteModal.vue';
 
 // Define the types for data items
 interface Task {
@@ -191,6 +192,36 @@ const handleEditHeader = (item: TaskGroup): void => {
   visibleAddTaskHeaderModal.value = true;
 };
 
+// Method to use in the template
+const remainingDays = (deadline: string): {message : string , isPast : boolean} => {
+  // Create a new Date object
+const now = new Date();
+
+// Create a new Date object for today at midnight
+const dateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+// console.log(dateOnly);
+// console.log(deadline);
+
+console.log(new Date(deadline))
+console.log(new Date(dateOnly))
+console.log(new Date(dateOnly) == new Date(deadline))
+console.log(new Date(dateOnly) > new Date(deadline))
+
+
+  if (new Date(deadline) > new Date()) {
+      return {
+        message: `${2} روز باقی مانده`,
+        isPast: false,
+      };
+    } else {
+      return {
+        message: `تاریخ گذشته است`,
+        isPast: true,
+      };
+    }
+};
+
 </script>
 
 <template>
@@ -199,42 +230,22 @@ const handleEditHeader = (item: TaskGroup): void => {
     <Button  @click="visibleAddTaskHeaderModal = true" icon="pi pi-plus" aria-label="Save" />
   </div>
 
-<Dialog :closable="false" v-model:visible="visibleAddTaskHeaderModal" modal header="" :style="{ width: '25rem' }">
-    <template #header>
-        <h4 v-if="editMode == false">
-            {{ 'اضافه کردن گروه' }}
-        </h4>
-        <h4  v-else>
-            {{ 'ویرایش کردن گروه' }}
-        </h4>
-    </template>
+  <Modal @close-modal="closeAddHeaderModal" @on-submit="addTaskGroup" :is-visible="visibleAddTaskHeaderModal" :isEdit="editMode" :header="editMode == false ? 'اضافه کردن گروه' :'ویرایش کردن گروه'">
     <div class="modalBody">
-
       <div class="customTextInput">
           <label for="headerText" class="required">سر متن</label>
           <InputText v-model="headerText" dir="rtl" id="headerText" class="flex-auto" autocomplete="off" />
           <small class="customError" v-if="v_header$.headerText.$error">سر متن اجباری است</small>
       </div>
     </div>
-    <template #footer>
-      <div style="margin-right: 2em; width: 100%;" class="">
-        <Button :label="editMode ? 'ویرایش' : 'ایجاد'" outlined severity="primary" @click="addTaskGroup" autofocus />
-        <Button label="انصراف" text severity="secondary" @click="closeAddHeaderModal" autofocus />
-      </div>
-    </template>
-</Dialog>
+  </Modal>
 
-<Dialog v-model:visible="visibleAddTaskModal" :closable="false" modal header="" :style="{ width: '25rem' }">
-    <template #header>
-        <h4 v-if="editMode == false">
-            {{ 'اضافه کردن تسک' }}
-        </h4>
-        <h4 v-else>
-            {{ 'ویرایش کردن تسک' }}
-        </h4>
-    </template>
-    <div class="modalBody">
-
+   <Modal 
+    @close-modal="closeAddTaskModal" 
+    @on-submit="addTask" 
+    :is-visible="visibleAddTaskModal" 
+    :isEdit="editMode" :header="editMode == false ? 'اضافه کردن تسک' : 'ویرایش کردن تسک'">
+     <div class="modalBody">
       <div class="customTextInput">
           <label for="comment" class="required">متن</label>
           <InputText v-model="comment" dir="rtl" id="comment" class="flex-auto" autocomplete="off" />
@@ -247,45 +258,17 @@ const handleEditHeader = (item: TaskGroup): void => {
             class="customDatePicker__input"
             id="deadline"
           />
+          {{ }}
           <small class="customError" v-if="v_tasks$.deadline.$error">مهلت اجباری است</small>
       </div>
     </div>
-    <template #footer>
-      <div style="margin-right: 2em; width: 100%;" class="">
-        <Button :label="editMode ? 'ایجاد' : 'ویرایش'" outlined severity="primary" @click="addTask" autofocus />
-        <Button label="انصراف" text severity="secondary" @click="closeAddTaskModal" autofocus />
-      </div>
-    </template>
-</Dialog>
+  </Modal>
 
-<Dialog :closable="false" v-model:visible="visibleDeleteModal" modal header="" :style="{ width: '25rem' }">
-    <template #header>
-        <h4>
-            {{ 'آیا از حذف آیتم مورد نظر اطمینان دارید' }}
-        </h4>
-    </template>
-    <div>
+  <DeleteModal :is-visible="visibleDeleteModal" @close-modal="closeDeleteModal" @on-submit="confirmDelete" />
 
 
-      <!-- <div class="customDatePicker">
-          <label for="email" class="font-semibold w-24">مهلت</label>
-         <custom-date-picker
-            v-model="test"
-            class="customDatePicker__input"
-          />
-      </div> -->
-    </div>
-    <template #footer>
-      <div style="margin-right: 2em; width: 100%;" class="">
-        <Button label="حذف" outlined severity="danger
-        " @click="confirmDelete" autofocus />
-        <Button label="انصراف" text severity="secondary" @click="closeDeleteModal" autofocus />
-      </div>
-    </template>
-</Dialog>
 
   <div class="mainContainer">
-
     <div v-for="item in data" class="customCard">
       <h1 class="customCard__header">{{ item.header }}</h1>
       <div class="customHeaderBtnContainer">
@@ -306,10 +289,11 @@ const handleEditHeader = (item: TaskGroup): void => {
               {{ element.comment }}
             </p>
           </div>
+          {{ new Date(element.deadline) }} {{ new Date()}}
+          {{ remainingDays(element.deadline) }}
         </template>
       </VueDraggableNext>
       <div  @click="openAddTaskModal(item.id)" class="customCard__addBtn"><p>
-
         +
       </p>
       </div>
@@ -460,11 +444,7 @@ margin: 1.75em .2em;
   cursor: grab;
   width: 80%;
 }
-.required:before {
-  content: ' *';
-  color: red;
-  
-}
+
 .customError {
   color: rgb(248, 107, 131);
   margin-top: .5em;

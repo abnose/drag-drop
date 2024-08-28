@@ -20,12 +20,12 @@ app
   .use(Vue3PersianDatetimePicker, {
     name: "CustomDatePicker",
     props: {
-      format: "YYYY-MM-DD HH:mm",
+      format: "YYYY-MM-DD",
       displayFormat: "jYYYY/jMM/jDD",
       editable: false,
       inputClass: "form-control",
       placeholder: "لطفا تاریخ را وارد کنید",
-      altFormat: "YYYY-MM-DD HH:mm",
+      altFormat: "YYYY-MM-DD",
       color: "#10B981",
       autoSubmit: true,
     },

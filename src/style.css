@@ -66,3 +66,8 @@ body {
   font-family: "irancell" !important;
   direction: rtl !important;
 }
+
+.required:before {
+  content: " *";
+  color: red;
+}
