@@ -63,5 +63,6 @@ body {
 }
 
 .p-toast {
-  font-family: "irancell";
+  font-family: "irancell" !important;
+  direction: rtl !important;
 }

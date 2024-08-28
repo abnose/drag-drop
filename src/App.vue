@@ -1,205 +1,207 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
-import { ref , watch } from "vue";
+import { ref, watch } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
-import dataStore from './store/crud'
+import dataStore from './store/crud';
 import { getRandomInt } from "./utils/util";
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
-import { useVuelidate } from '@vuelidate/core'
-import { required } from '@vuelidate/validators'
+import { useVuelidate } from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 
-const toast = useToast();
+// Define the types for data items
+interface Task {
+  comment: string;
+  createDate: string;
+  deadline: string;
+  id: number;
+}
 
-const showSuccess = (text) => {
+interface TaskGroup {
+  header: string;
+  id: number;
+  body: Task[];
+}
+
+// Using the store
+const store = dataStore();
+
+// Toast functionality
+const toast = useToast();
+const showSuccess = (text: string): void => {
     toast.add({ severity: 'success', summary: 'موفق', detail: text, life: 3000 });
 };
 
-const store = dataStore()
-
-
-// inital header
-const headerText = ref<string>('')
+// Initial header setup
+const headerText = ref<string>('');
 const headerRules = {
   headerText: { required },
-}
-const v_header$ = useVuelidate(headerRules, { headerText })
+};
+const v_header$ = useVuelidate(headerRules, { headerText });
 
-// initial task
-const comment = ref('')
-const deadline = ref('')
+// Initial task setup
+const comment = ref<string>('');
+const deadline = ref<string>('');
 const rules = {
   comment: { required },
-  deadline: { required }
-}
-const v_tasks$ = useVuelidate(rules, { comment, deadline })
-// modal 
-const editMode = ref(false)
+  deadline: { required },
+};
+const v_tasks$ = useVuelidate(rules, { comment, deadline });
 
-const visibleAddTaskHeaderModal = ref(false);
-const visibleAddTaskModal = ref(false);
-const visibleDeleteModal = ref(false)
-// Define the meals and yuckyMeals arrays
-// const data = ref(
-//   [
-//     { header: 'header 1',
-//       id: 1, 
-//     body :[
-//       {comment: 'comment 1 1', createDate: '1 1' , deadline: '1 1'},
-//       {comment: 'comment 1 2', createDate: '1 2' , deadline: '1 2'},
-//       {comment: 'comment 1 3', createDate: '1 3' , deadline: '1 3'},
-//       {comment: 'comment 1 4', createDate: '1 4' , deadline: '1 4'},
-//     ]},
-//     { header: 'header 2',
-//       id: 2, 
-//     body :[
-//       {comment: 'comment 2 1', createDate: '2 1' , deadline: '2 1'},
-//       {comment: 'comment 2 2', createDate: '2 2' , deadline: '2 2'},
-//       {comment: 'comment 2 3', createDate: '2 3' , deadline: '2 3'},
-//       {comment: 'comment 2 4', createDate: '2 4' , deadline: '2 4'},
-//     ]}
-// ])
+// Modal visibility and mode states
+const editMode = ref<boolean>(false);
 
-const data = ref(store.storedData)
+const visibleAddTaskHeaderModal = ref<boolean>(false);
+const visibleAddTaskModal = ref<boolean>(false);
+const visibleDeleteModal = ref<boolean>(false);
+
+// Reference for data storage
+const data = ref<TaskGroup[]>(store.storedData as TaskGroup[]);
 
 watch(data.value, async () => {
-  store.saveData(data.value)
-})
-
-const closeAddHeaderModal= () => {
-  headerText.value = ''
-  visibleAddTaskHeaderModal.value = false
-  editMode.value = false
-  v_header$.value.$reset() 
-}
+  store.saveData(data.value);
+});
 
 
+// Close modals and reset validation
+const closeAddHeaderModal = (): void => {
+  headerText.value = '';
+  visibleAddTaskHeaderModal.value = false;
+  editMode.value = false;
+  v_header$.value.$reset();
+};
 
-const closeAddTaskModal= () => {
-  comment.value = ''
-  deadline.value = ''
-  visibleAddTaskModal.value = false
-  selectedGroupId.value = 0
-  editMode.value = false
-  v_tasks$.value.$reset() 
-}
+const closeAddTaskModal = (): void => {
+  comment.value = '';
+  deadline.value = '';
+  visibleAddTaskModal.value = false;
+  selectedGroupId.value = 0;
+  editMode.value = false;
+  v_tasks$.value.$reset();
+};
 
-const selectedGroupId = ref<number>(0)
-const selectedTaskId = ref<number>(0)
+// Selected IDs for editing tasks or groups
+const selectedGroupId = ref<number>(0);
+const selectedTaskId = ref<number>(0);
 
-const openAddTaskModal= (id) => {
-  selectedGroupId.value = id
-  visibleAddTaskModal.value = true
-}
+// Function to open task modal
+const openAddTaskModal = (id: number): void => {
+  selectedGroupId.value = id;
+  visibleAddTaskModal.value = true;
+};
 
-const addTaskGroup = () => {
-v_header$.value.$touch() // Touch all fields to trigger validation
-    if (v_header$.value.$invalid) {
-      console.log('Form submitted:', { headerText: headerText.value }) 
-      return
-    }
-
-    if (editMode.value == true) {
-             Object.values(data.value).forEach((item) => {
-        if (item.id == selectedGroupId.value) {
-          item.header = headerText.value
-        }         
-    })
-    } else {
-      data.value.push(
-        { 
-          header: headerText.value,
-          id: getRandomInt(5000), 
-          body :[]
-        }
-      )
-
-    }
-    showSuccess('با موفقیت حذف شد')
-  closeAddHeaderModal()
-}
-
-const addTask = () => {
-  v_tasks$.value.$touch() // Touch all fields to trigger validation
-  if (v_tasks$.value.$invalid) {   
-    return
+// Function to add or edit a task group
+const addTaskGroup = (): void => {
+  v_header$.value.$touch(); // Touch all fields to trigger validation
+  if (v_header$.value.$invalid) {
+    console.log('Form submitted:', { headerText: headerText.value });
+    return;
   }
-  if (editMode.value == true) {
-        Object.values(data.value).forEach((item) => {
-          if (item.id == selectedGroupId.value) { 
-            Object.values(item.body).forEach(el => {
-              if (el.id == selectedTaskId.value) {
-                el.comment = comment.value
-                el.deadline = deadline.value
-              }
-            })
-          }
-    })
-  } else {
-    console.log('here')
-    Object.values(data.value).forEach((item) => {
-      console.log(item , '***************' , selectedGroupId.value)
-      if (item.id == selectedGroupId.value) {
-        item.body.push({comment: comment.value, createDate: new Date().toDateString() , deadline: deadline.value,id: getRandomInt(10000)})
+
+  if (editMode.value) {
+    data.value.forEach((item) => {
+      if (item.id === selectedGroupId.value) {
+        item.header = headerText.value;
       }
-    })
+    });
+  } else {
+    data.value.push({
+      header: headerText.value,
+      id: getRandomInt(5000),
+      body: [],
+    });
   }
-  
-  closeAddTaskModal()
-}
+
+  showSuccess('با موفقیت انجام شد');
+  closeAddHeaderModal();
+};
+
+// Function to add or edit a task
+const addTask = (): void => {
+  v_tasks$.value.$touch(); // Touch all fields to trigger validation
+  if (v_tasks$.value.$invalid) {
+    return;
+  }
+
+  if (editMode.value) {
+    data.value.forEach((item) => {
+      if (item.id === selectedGroupId.value) {
+        item.body.forEach((el) => {
+          if (el.id === selectedTaskId.value) {
+            el.comment = comment.value;
+            el.deadline = deadline.value;
+          }
+        });
+      }
+    });
+  } else {
+    data.value.forEach((item) => {
+      if (item.id === selectedGroupId.value) {
+        item.body.push({
+          comment: comment.value,
+          createDate: new Date().toDateString(),
+          deadline: deadline.value,
+          id: getRandomInt(10000),
+        });
+      }
+    });
+  }
+
+  closeAddTaskModal();
+  showSuccess('با موفقیت انجام شد');
+};
 
 
+// Delete confirmation and actions
+const deletedItemId = ref<number>();
 
-const deletedItemId = ref()
+const confirmDelete = (): void => {
+  data.value.forEach((item) => {
+    item.body = item.body.filter(el => el.id !== deletedItemId.value);
+  });
+  closeDeleteModal();
+  showSuccess('با موفقیت حذف شد');
+};
 
-const confirmDelete = () => {
-  Object.values(data.value).forEach((item) => {
-   item.body = Object.values(item.body).filter(el => el.id !== deletedItemId.value);
-  })
-  closeDeleteModal()
-}
+const handleDeleteTask = (id: number): void => {
+  deletedItemId.value = id;
+  visibleDeleteModal.value = true;
+};
 
-const handleDeleteTask = (id) => {
-  deletedItemId.value = id
-  visibleDeleteModal.value = true
-}
+// Edit handlers for tasks and headers
+const handleEditTask = (taskData: Task, groupId: number): void => {
+  selectedTaskId.value = taskData.id;
+  openAddTaskModal(groupId);
+  comment.value = taskData.comment;
+  deadline.value = taskData.deadline;
+  editMode.value = true;
+};
 
-const handleEditTask = (data, groupId) => {
-  // selectedGroupId.value = groupId
-  selectedTaskId.value = data.id
-  openAddTaskModal(groupId)
-  comment.value = data.comment
-  deadline.value = data.deadline
-  editMode.value = true
-}
+const closeDeleteModal = (): void => {
+  deletedItemId.value = 0;
+  visibleDeleteModal.value = false;
+};
 
-const closeDeleteModal= () => {
-  deletedItemId.value = 0
-  visibleDeleteModal.value = false
-}
-
-const handleEditHeader = (item) => {
-  console.log(item);
-  selectedGroupId.value = item.id
-  editMode.value = true
-  headerText.value = item.header
-  visibleAddTaskHeaderModal.value = true
-}
+const handleEditHeader = (item: TaskGroup): void => {
+  selectedGroupId.value = item.id;
+  editMode.value = true;
+  headerText.value = item.header;
+  visibleAddTaskHeaderModal.value = true;
+};
 
 </script>
 
 <template>
-      <Toast />
-  <!-- <Button class="customBtn">+</Button> -->
-   <div class="helperBtnGroup">
-     <Button  @click="visibleAddTaskHeaderModal = true" icon="pi pi-plus" aria-label="Save" />
+  <Toast />
+  <div class="helperBtnGroup">
+    <Button  @click="visibleAddTaskHeaderModal = true" icon="pi pi-plus" aria-label="Save" />
   </div>
 
 <Dialog :closable="false" v-model:visible="visibleAddTaskHeaderModal" modal header="" :style="{ width: '25rem' }">
     <template #header>
-        <h4 v-if="editMode == true">
+        <h4 v-if="editMode == false">
             {{ 'اضافه کردن گروه' }}
         </h4>
         <h4  v-else>
@@ -213,17 +215,10 @@ const handleEditHeader = (item) => {
           <InputText v-model="headerText" dir="rtl" id="headerText" class="flex-auto" autocomplete="off" />
           <small class="customError" v-if="v_header$.headerText.$error">سر متن اجباری است</small>
       </div>
-      <!-- <div class="customDatePicker">
-          <label for="email" class="font-semibold w-24">مهلت</label>
-         <custom-date-picker
-            v-model="test"
-            class="customDatePicker__input"
-          />
-      </div> -->
     </div>
     <template #footer>
       <div style="margin-right: 2em; width: 100%;" class="">
-        <Button label="ایجاد" outlined severity="primary" @click="addTaskGroup" autofocus />
+        <Button :label="editMode ? 'ویرایش' : 'ایجاد'" outlined severity="primary" @click="addTaskGroup" autofocus />
         <Button label="انصراف" text severity="secondary" @click="closeAddHeaderModal" autofocus />
       </div>
     </template>
@@ -257,7 +252,7 @@ const handleEditHeader = (item) => {
     </div>
     <template #footer>
       <div style="margin-right: 2em; width: 100%;" class="">
-        <Button label="ایجاد" outlined severity="primary" @click="addTask" autofocus />
+        <Button :label="editMode ? 'ایجاد' : 'ویرایش'" outlined severity="primary" @click="addTask" autofocus />
         <Button label="انصراف" text severity="secondary" @click="closeAddTaskModal" autofocus />
       </div>
     </template>
