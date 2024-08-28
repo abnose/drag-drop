@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
-import { ref, watch ,computed } from "vue";
+import { ref, watch  } from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import dataStore from './store/crud';
-import { getRandomInt ,calculateRemainingDays } from "./utils/util";
+import { getRandomInt ,handleDate } from "./utils/util";
 import InputText from 'primevue/inputtext';
 import { useVuelidate } from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
@@ -193,34 +193,42 @@ const handleEditHeader = (item: TaskGroup): void => {
 };
 
 // Method to use in the template
-const remainingDays = (deadline: string): {message : string , isPast : boolean} => {
-  // Create a new Date object
-const now = new Date();
+const remainingDays = (deadline: string): { message: string, isPast: boolean } => {
+  // Create a new Date object for now and normalize it to midnight
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  // Create a new Date object for the deadline and normalize it to midnight
+  const deadlineDate = new Date(deadline);
+  const deadlineDay = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
 
-// Create a new Date object for today at midnight
-const dateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Calculate the difference in milliseconds
+  const differenceInMs = deadlineDay.getTime() - today.getTime();
+  const differenceInDays = Math.floor(differenceInMs / (1000 * 60 * 60 * 24));
 
-// console.log(dateOnly);
-// console.log(deadline);
-
-console.log(new Date(deadline))
-console.log(new Date(dateOnly))
-console.log(new Date(dateOnly) == new Date(deadline))
-console.log(new Date(dateOnly) > new Date(deadline))
-
-
-  if (new Date(deadline) > new Date()) {
-      return {
-        message: `${2} روز باقی مانده`,
-        isPast: false,
-      };
-    } else {
-      return {
-        message: `تاریخ گذشته است`,
-        isPast: true,
-      };
-    }
+  console.log(differenceInDays);
+  // Determine the message and whether it's past
+  if (differenceInDays > 0) {
+    return {
+      message: `${differenceInDays} روز باقی مانده`,
+      isPast: false,
+    };
+  } else if (differenceInDays === 0) {
+    return {
+      message: `تاریخ امروز است`,
+      isPast: false,
+    };
+  } else {
+    return {
+      message: `تاریخ گذشته است`,
+      isPast: true,
+    };
+  }
 };
+
+const showingDate = (createDate: string) : string => {  
+ return handleDate(createDate)
+}
 
 </script>
 
@@ -279,7 +287,7 @@ console.log(new Date(dateOnly) > new Date(deadline))
           بنداز اینجا
         </span>
         <template v-for="element in item.body"">
-          <div class="task">
+          <div class="task" :style="[remainingDays(element.deadline).isPast ? {background: 'red'} : {background: '#f4ff8f'}]">
       
                   <div class="customCard__body--btnContainer">
             <Button @click="handleDeleteTask(element.id)" icon="pi pi-trash" severity="danger" aria-label="trash" />
@@ -288,9 +296,12 @@ console.log(new Date(dateOnly) > new Date(deadline))
                 <p>
               {{ element.comment }}
             </p>
+            <small>{{ remainingDays(element.deadline).message }}</small>
+            <small>{{ showingDate(element.createDate) }}</small>
+            
           </div>
-          {{ new Date(element.deadline) }} {{ new Date()}}
-          {{ remainingDays(element.deadline) }}
+          <!-- {{ new Date(element.deadline) }} {{ new Date()}} -->
+          
         </template>
       </VueDraggableNext>
       <div  @click="openAddTaskModal(item.id)" class="customCard__addBtn"><p>
@@ -438,7 +449,7 @@ margin: 1.75em .2em;
   list-style: none;
   padding: 8px;
   margin: 4px 0;
-  background-color: #f4ff8f;
+  // background-color: #f4ff8f;
   color: black;
   border-radius: 4px;
   cursor: grab;
