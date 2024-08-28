@@ -6,9 +6,9 @@ import PrimeVue from "primevue/config";
 import Aura from "@primevue/themes/aura";
 import "primeicons/primeicons.css";
 import Vue3PersianDatetimePicker from "vue3-persian-datetime-picker";
+import ToastService from "primevue/toastservice";
 
 const pinia = createPinia();
-
 const app = createApp(App);
 app
   .use(pinia)
@@ -30,4 +30,5 @@ app
       autoSubmit: true,
     },
   })
+  .use(ToastService)
   .mount("#app");

@@ -8,6 +8,15 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
+
+const showSuccess = (text) => {
+    toast.add({ severity: 'success', summary: 'موفق', detail: text, life: 3000 });
+};
+
 const store = dataStore()
 
 
@@ -27,9 +36,11 @@ const rules = {
 }
 const v_tasks$ = useVuelidate(rules, { comment, deadline })
 // modal 
+const editMode = ref(false)
 
 const visibleAddTaskHeaderModal = ref(false);
 const visibleAddTaskModal = ref(false);
+const visibleDeleteModal = ref(false)
 // Define the meals and yuckyMeals arrays
 // const data = ref(
 //   [
@@ -60,18 +71,24 @@ watch(data.value, async () => {
 const closeAddHeaderModal= () => {
   headerText.value = ''
   visibleAddTaskHeaderModal.value = false
+  editMode.value = false
   v_header$.value.$reset() 
 }
+
+
 
 const closeAddTaskModal= () => {
   comment.value = ''
   deadline.value = ''
   visibleAddTaskModal.value = false
   selectedGroupId.value = 0
+  editMode.value = false
   v_tasks$.value.$reset() 
 }
 
 const selectedGroupId = ref<number>(0)
+const selectedTaskId = ref<number>(0)
+
 const openAddTaskModal= (id) => {
   selectedGroupId.value = id
   visibleAddTaskModal.value = true
@@ -83,14 +100,24 @@ v_header$.value.$touch() // Touch all fields to trigger validation
       console.log('Form submitted:', { headerText: headerText.value }) 
       return
     }
-    
-  data.value.push(
-    { 
-      header: headerText.value,
-      id: getRandomInt(5000), 
-      body :[]
+
+    if (editMode.value == true) {
+             Object.values(data.value).forEach((item) => {
+        if (item.id == selectedGroupId.value) {
+          item.header = headerText.value
+        }         
+    })
+    } else {
+      data.value.push(
+        { 
+          header: headerText.value,
+          id: getRandomInt(5000), 
+          body :[]
+        }
+      )
+
     }
-  )
+    showSuccess('با موفقیت حذف شد')
   closeAddHeaderModal()
 }
 
@@ -99,23 +126,72 @@ const addTask = () => {
   if (v_tasks$.value.$invalid) {   
     return
   }
-
-  console.log(data.value)
-  Object.values(data.value).forEach((item) => {
-    if (item.id == selectedGroupId.value) {
-      item.body.push({comment: comment.value, createDate: new Date().toDateString() , deadline: deadline.value})
-    }
-  })
+  if (editMode.value == true) {
+        Object.values(data.value).forEach((item) => {
+          if (item.id == selectedGroupId.value) { 
+            Object.values(item.body).forEach(el => {
+              if (el.id == selectedTaskId.value) {
+                el.comment = comment.value
+                el.deadline = deadline.value
+              }
+            })
+          }
+    })
+  } else {
+    console.log('here')
+    Object.values(data.value).forEach((item) => {
+      console.log(item , '***************' , selectedGroupId.value)
+      if (item.id == selectedGroupId.value) {
+        item.body.push({comment: comment.value, createDate: new Date().toDateString() , deadline: deadline.value,id: getRandomInt(10000)})
+      }
+    })
+  }
   
   closeAddTaskModal()
 }
 
 
 
+const deletedItemId = ref()
+
+const confirmDelete = () => {
+  Object.values(data.value).forEach((item) => {
+   item.body = Object.values(item.body).filter(el => el.id !== deletedItemId.value);
+  })
+  closeDeleteModal()
+}
+
+const handleDeleteTask = (id) => {
+  deletedItemId.value = id
+  visibleDeleteModal.value = true
+}
+
+const handleEditTask = (data, groupId) => {
+  // selectedGroupId.value = groupId
+  selectedTaskId.value = data.id
+  openAddTaskModal(groupId)
+  comment.value = data.comment
+  deadline.value = data.deadline
+  editMode.value = true
+}
+
+const closeDeleteModal= () => {
+  deletedItemId.value = 0
+  visibleDeleteModal.value = false
+}
+
+const handleEditHeader = (item) => {
+  console.log(item);
+  selectedGroupId.value = item.id
+  editMode.value = true
+  headerText.value = item.header
+  visibleAddTaskHeaderModal.value = true
+}
 
 </script>
 
 <template>
+      <Toast />
   <!-- <Button class="customBtn">+</Button> -->
    <div class="helperBtnGroup">
      <Button  @click="visibleAddTaskHeaderModal = true" icon="pi pi-plus" aria-label="Save" />
@@ -123,8 +199,11 @@ const addTask = () => {
 
 <Dialog :closable="false" v-model:visible="visibleAddTaskHeaderModal" modal header="" :style="{ width: '25rem' }">
     <template #header>
-        <h4>
+        <h4 v-if="editMode == true">
             {{ 'اضافه کردن گروه' }}
+        </h4>
+        <h4  v-else>
+            {{ 'ویرایش کردن گروه' }}
         </h4>
     </template>
     <div class="modalBody">
@@ -152,8 +231,11 @@ const addTask = () => {
 
 <Dialog v-model:visible="visibleAddTaskModal" :closable="false" modal header="" :style="{ width: '25rem' }">
     <template #header>
-        <h4>
+        <h4 v-if="editMode == false">
             {{ 'اضافه کردن تسک' }}
+        </h4>
+        <h4 v-else>
+            {{ 'ویرایش کردن تسک' }}
         </h4>
     </template>
     <div class="modalBody">
@@ -181,17 +263,54 @@ const addTask = () => {
     </template>
 </Dialog>
 
+<Dialog :closable="false" v-model:visible="visibleDeleteModal" modal header="" :style="{ width: '25rem' }">
+    <template #header>
+        <h4>
+            {{ 'آیا از حذف آیتم مورد نظر اطمینان دارید' }}
+        </h4>
+    </template>
+    <div>
+
+
+      <!-- <div class="customDatePicker">
+          <label for="email" class="font-semibold w-24">مهلت</label>
+         <custom-date-picker
+            v-model="test"
+            class="customDatePicker__input"
+          />
+      </div> -->
+    </div>
+    <template #footer>
+      <div style="margin-right: 2em; width: 100%;" class="">
+        <Button label="حذف" outlined severity="danger
+        " @click="confirmDelete" autofocus />
+        <Button label="انصراف" text severity="secondary" @click="closeDeleteModal" autofocus />
+      </div>
+    </template>
+</Dialog>
 
   <div class="mainContainer">
 
     <div v-for="item in data" class="customCard">
       <h1 class="customCard__header">{{ item.header }}</h1>
+      <div class="customHeaderBtnContainer">
+        <Button @click="handleEditHeader(item)" icon="pi pi-pencil" severity="warn" aria-label="pencil" />
+      </div>
       <VueDraggableNext  class="customCard__body"  v-model="item.body" tag="div" group="tasks" :animation="100">
         <span v-if="!item.body?.length">
           بنداز اینجا
         </span>
         <template v-for="element in item.body"">
-          <div class="task">{{ element.comment }}</div>
+          <div class="task">
+      
+                  <div class="customCard__body--btnContainer">
+            <Button @click="handleDeleteTask(element.id)" icon="pi pi-trash" severity="danger" aria-label="trash" />
+            <Button @click="handleEditTask(element , item.id)" icon="pi pi-pencil" severity="warn" aria-label="pencil" />
+          </div>
+                <p>
+              {{ element.comment }}
+            </p>
+          </div>
         </template>
       </VueDraggableNext>
       <div  @click="openAddTaskModal(item.id)" class="customCard__addBtn"><p>
@@ -213,6 +332,12 @@ const addTask = () => {
   height: 100%;
   // background: red;
 }
+.customHeaderBtnContainer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(5px ,-15px);
+}
 .customCard {
   // background: red;
   border: 1px solid snow;
@@ -223,7 +348,7 @@ box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 backdrop-filter: blur(5px);
 -webkit-backdrop-filter: blur(5px);
 border: 1px solid rgba(255, 255, 255, 0.3);
-width: 24.6%;
+width: 49%;
 min-height: 200px;
 display: flex;
 flex-direction: column;
@@ -255,6 +380,13 @@ margin: 1.75em .2em;
      padding: 1em;
     align-items: center;
     flex-direction: column;
+    &--btnContainer {
+      display: flex;
+      margin-right: auto;
+      Button {
+        margin: .1em;
+      }
+    }
   }
   &__addBtn {
     background: green;
