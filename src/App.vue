@@ -6,10 +6,30 @@ import dataStore from './store/crud'
 import { getRandomInt } from "./utils/util";
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
-
+import { useVuelidate } from '@vuelidate/core'
+import { required } from '@vuelidate/validators'
 const store = dataStore()
+
+
+// inital header
 const headerText = ref<string>('')
-const visible = ref(false);
+const headerRules = {
+  headerText: { required },
+}
+const v_header$ = useVuelidate(headerRules, { headerText })
+
+// initial task
+const comment = ref('')
+const deadline = ref('')
+const rules = {
+  comment: { required },
+  deadline: { required }
+}
+const v_tasks$ = useVuelidate(rules, { comment, deadline })
+// modal 
+
+const visibleAddTaskHeaderModal = ref(false);
+const visibleAddTaskModal = ref(false);
 // Define the meals and yuckyMeals arrays
 // const data = ref(
 //   [
@@ -37,13 +57,33 @@ watch(data.value, async () => {
   store.saveData(data.value)
 })
 
-const closeAddHeaderSidebar= () => {
+const closeAddHeaderModal= () => {
   headerText.value = ''
-  visible.value = false
+  visibleAddTaskHeaderModal.value = false
+  v_header$.value.$reset() 
+}
 
+const closeAddTaskModal= () => {
+  comment.value = ''
+  deadline.value = ''
+  visibleAddTaskModal.value = false
+  selectedGroupId.value = 0
+  v_tasks$.value.$reset() 
+}
+
+const selectedGroupId = ref<number>(0)
+const openAddTaskModal= (id) => {
+  selectedGroupId.value = id
+  visibleAddTaskModal.value = true
 }
 
 const addTaskGroup = () => {
+v_header$.value.$touch() // Touch all fields to trigger validation
+    if (v_header$.value.$invalid) {
+      console.log('Form submitted:', { headerText: headerText.value }) 
+      return
+    }
+    
   data.value.push(
     { 
       header: headerText.value,
@@ -51,20 +91,37 @@ const addTaskGroup = () => {
       body :[]
     }
   )
-  closeAddHeaderSidebar()
+  closeAddHeaderModal()
 }
 
-const test = ref()
+const addTask = () => {
+  v_tasks$.value.$touch() // Touch all fields to trigger validation
+  if (v_tasks$.value.$invalid) {   
+    return
+  }
+
+  console.log(data.value)
+  Object.values(data.value).forEach((item) => {
+    if (item.id == selectedGroupId.value) {
+      item.body.push({comment: comment.value, createDate: new Date().toDateString() , deadline: deadline.value})
+    }
+  })
+  
+  closeAddTaskModal()
+}
+
+
+
 
 </script>
 
 <template>
   <!-- <Button class="customBtn">+</Button> -->
    <div class="helperBtnGroup">
-     <Button  @click="visible = true" icon="pi pi-plus" aria-label="Save" />
+     <Button  @click="visibleAddTaskHeaderModal = true" icon="pi pi-plus" aria-label="Save" />
   </div>
 
-<Dialog v-model:visible="visible" modal header="" :style="{ width: '25rem' }">
+<Dialog :closable="false" v-model:visible="visibleAddTaskHeaderModal" modal header="" :style="{ width: '25rem' }">
     <template #header>
         <h4>
             {{ 'اضافه کردن گروه' }}
@@ -73,8 +130,9 @@ const test = ref()
     <div class="modalBody">
 
       <div class="customTextInput">
-          <label for="deadLine" class="font-semibold w-24">سر متن</label>
+          <label for="headerText" class="required">سر متن</label>
           <InputText v-model="headerText" dir="rtl" id="headerText" class="flex-auto" autocomplete="off" />
+          <small class="customError" v-if="v_header$.headerText.$error">سر متن اجباری است</small>
       </div>
       <!-- <div class="customDatePicker">
           <label for="email" class="font-semibold w-24">مهلت</label>
@@ -86,8 +144,39 @@ const test = ref()
     </div>
     <template #footer>
       <div style="margin-right: 2em; width: 100%;" class="">
-        <Button label="ذخیره" outlined severity="primary" @click="addTaskGroup" autofocus />
-        <Button label="انصراف" text severity="secondary" @click="visible = false" autofocus />
+        <Button label="ایجاد" outlined severity="primary" @click="addTaskGroup" autofocus />
+        <Button label="انصراف" text severity="secondary" @click="closeAddHeaderModal" autofocus />
+      </div>
+    </template>
+</Dialog>
+
+<Dialog v-model:visible="visibleAddTaskModal" :closable="false" modal header="" :style="{ width: '25rem' }">
+    <template #header>
+        <h4>
+            {{ 'اضافه کردن تسک' }}
+        </h4>
+    </template>
+    <div class="modalBody">
+
+      <div class="customTextInput">
+          <label for="comment" class="required">متن</label>
+          <InputText v-model="comment" dir="rtl" id="comment" class="flex-auto" autocomplete="off" />
+          <small class="customError" v-if="v_tasks$.comment.$error">متن اجباری است</small>
+      </div>
+      <div class="customDatePicker">
+          <label for="deadline" class="required">مهلت</label>
+         <custom-date-picker
+            v-model="deadline"
+            class="customDatePicker__input"
+            id="deadline"
+          />
+          <small class="customError" v-if="v_tasks$.deadline.$error">مهلت اجباری است</small>
+      </div>
+    </div>
+    <template #footer>
+      <div style="margin-right: 2em; width: 100%;" class="">
+        <Button label="ایجاد" outlined severity="primary" @click="addTask" autofocus />
+        <Button label="انصراف" text severity="secondary" @click="closeAddTaskModal" autofocus />
       </div>
     </template>
 </Dialog>
@@ -105,7 +194,11 @@ const test = ref()
           <div class="task">{{ element.comment }}</div>
         </template>
       </VueDraggableNext>
-      <div class="customCard__addBtn">+</div>
+      <div  @click="openAddTaskModal(item.id)" class="customCard__addBtn"><p>
+
+        +
+      </p>
+      </div>
     </div>
   </div>
 
@@ -164,13 +257,26 @@ margin: 1.75em .2em;
     flex-direction: column;
   }
   &__addBtn {
-    background: rgb(95, 95, 95);
-    width: 80%;
+    background: green;
+    width: 90%;
+    height: 35px;
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px ;
     position: absolute;
     bottom: 0;
     transform: translate(0, 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    p {
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      padding: 0 0.05em 1.15em 0;
+      background: greenyellow;
+      color: black;
+    }
   }
 }
 .modalBody {
@@ -226,5 +332,14 @@ margin: 1.75em .2em;
   border-radius: 4px;
   cursor: grab;
   width: 80%;
+}
+.required:before {
+  content: ' *';
+  color: red;
+  
+}
+.customError {
+  color: rgb(248, 107, 131);
+  margin-top: .5em;
 }
 </style>
