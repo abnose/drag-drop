@@ -226,6 +226,7 @@ const handleEditHeader = (item: TaskGroup): void => {
       icon="pi pi-plus"
       aria-label="Add"
       v-tooltip.bottom="'اضافه کردن گروه'"
+      class="mrRight"
     />
     <Button
       @click="handleDeleteAll"
@@ -233,6 +234,7 @@ const handleEditHeader = (item: TaskGroup): void => {
       severity="danger"
       aria-label="delete"
       v-tooltip.bottom="'حذف همه'"
+      :disabled="data.length == 0"
     />
   </div>
 
@@ -308,12 +310,14 @@ const handleEditHeader = (item: TaskGroup): void => {
     @editTask="handleEditTask"
     @addTask="openAddTaskModal"
   ></List>
+
+  <div class="" v-if="data.length == 0">
+    <h1>در حال حاضر آیتمی وجود ندارد</h1>
+    <h4>برای اضافه کردن آیتم روی دکمه مثبت کلیک کنید</h4>
+  </div>
 </template>
 
 <style scoped lang="scss">
-.modalBody {
-  margin-top: -0.75em;
-}
 .helperBtnGroup {
   position: absolute;
   top: 0;

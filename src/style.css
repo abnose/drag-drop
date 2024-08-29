@@ -72,3 +72,9 @@ body {
 .rltDir {
   direction: rtl;
 }
+.modalBody {
+  /* margin-top: -0.75em; */
+}
+.mrRight {
+  margin-right: .5em;
+}

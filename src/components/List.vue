@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Button from "primevue/button";
 import { VueDraggableNext } from "vue-draggable-next";
-import { handleDate } from "../utils/util";
+import { handleDate, stringReducer, remainingDays } from "../utils/util";
 import dataStore from "../store/crud";
 import { Task, TaskGroup } from "../App.vue";
 
@@ -36,53 +36,9 @@ const handleAddTask = (id: number) => {
 };
 
 // Method to use in the template
-const remainingDays = (
-  deadline: string
-): { message: string; isPast: boolean } => {
-  // Create a new Date object for now and normalize it to midnight
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  // Create a new Date object for the deadline and normalize it to midnight
-  const deadlineDate = new Date(deadline);
-  const deadlineDay = new Date(
-    deadlineDate.getFullYear(),
-    deadlineDate.getMonth(),
-    deadlineDate.getDate()
-  );
-
-  // Calculate the difference in milliseconds
-  const differenceInMs = deadlineDay.getTime() - today.getTime();
-  const differenceInDays = Math.floor(differenceInMs / (1000 * 60 * 60 * 24));
-
-  // Determine the message and whether it's past
-  if (differenceInDays > 0) {
-    return {
-      message: `${differenceInDays} روز باقی مانده`,
-      isPast: false,
-    };
-  } else if (differenceInDays === 0) {
-    return {
-      message: `تاریخ امروز است`,
-      isPast: false,
-    };
-  } else {
-    return {
-      message: `تاریخ گذشته است`,
-      isPast: true,
-    };
-  }
-};
 
 const showingDate = (createDate: string): string => {
   return handleDate(createDate);
-};
-
-const stringReducer = (data: string, len: number): string => {
-  if (+data.length > len) {
-    return data.slice(0, len) + "...";
-  }
-  return data;
 };
 </script>
 
@@ -103,6 +59,8 @@ const stringReducer = (data: string, len: number): string => {
           severity="warn"
           aria-label="pencil"
           v-tooltip.bottom="'ویرایش گروه'"
+          class="mrRight"
+          rounded
         />
         <Button
           @click="handleDeleteHeader(item)"
@@ -110,6 +68,7 @@ const stringReducer = (data: string, len: number): string => {
           severity="danger"
           aria-label="trash"
           v-tooltip.bottom="'حذف گروه'"
+          rounded
         />
       </div>
       <VueDraggableNext

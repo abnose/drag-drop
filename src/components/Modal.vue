@@ -33,7 +33,7 @@ const closeModal = () => {
     :closable="false"
     v-model:visible="props.isVisible"
     modal
-    :style="{ width: '25rem' }"
+    :style="{ width: '50rem' }"
   >
     <template #header>
       <h4>
