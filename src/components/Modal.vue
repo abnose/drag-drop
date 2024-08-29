@@ -41,21 +41,7 @@ const closeModal = () => {
       </h4>
     </template>
     <slot></slot>
-    <div class="modalBody">
-      <!-- <div class="customTextInput">
-        <label for="headerText" class="required">سر متن</label>
-        <InputText
-          v-model="headerText"
-          dir="rtl"
-          id="headerText"
-          class="flex-auto"
-          autocomplete="off"
-        />
-        <small class="customError" v-if="v_header$.headerText.$error"
-          >سر متن اجباری است</small
-        >
-      </div> -->
-    </div>
+    <div class="modalBody"></div>
     <template #footer>
       <div class="modalBtn">
         <Button
