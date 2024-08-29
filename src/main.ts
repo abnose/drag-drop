@@ -5,6 +5,7 @@ import { createPinia } from "pinia";
 import PrimeVue from "primevue/config";
 import Aura from "@primevue/themes/aura";
 import "primeicons/primeicons.css";
+import Tooltip from 'primevue/tooltip';
 import Vue3PersianDatetimePicker from "vue3-persian-datetime-picker";
 import ToastService from "primevue/toastservice";
 
@@ -17,6 +18,7 @@ app
       preset: Aura,
     },
   })
+  .directive('tooltip', Tooltip)
   .use(Vue3PersianDatetimePicker, {
     name: "CustomDatePicker",
     props: {
